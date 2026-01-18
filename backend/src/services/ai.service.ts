@@ -64,7 +64,21 @@ Rules:
 
       try {
         const result = await this.model.generateContent(prompt);
-        const responseText = result.response.text();
+        let responseText = result.response.text();
+
+        // Clean the response - remove markdown code blocks and extra text
+        responseText = responseText
+          .replace(/^```json\n?/i, '')
+          .replace(/^```\n?/, '')
+          .replace(/\n?```$/, '')
+          .trim();
+
+        // Try to extract JSON object if there's extra text
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          responseText = jsonMatch[0];
+        }
+
         const categories = JSON.parse(responseText);
 
         for (const event of batch) {
