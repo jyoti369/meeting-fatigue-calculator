@@ -48,14 +48,22 @@ function Dashboard() {
     if (!reportCardRef.current) return;
 
     try {
+      // Wait a moment to ensure all fonts and styles are fully loaded
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const canvas = await html2canvas(reportCardRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: reportCardRef.current.scrollWidth,
+        windowHeight: reportCardRef.current.scrollHeight,
       });
 
       const link = document.createElement('a');
       link.download = 'meeting-fatigue-report.png';
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     } catch (err) {
       console.error('Failed to generate image:', err);
