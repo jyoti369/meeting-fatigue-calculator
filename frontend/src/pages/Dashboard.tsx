@@ -188,7 +188,19 @@ function Dashboard() {
         </div>
 
         {/* Footer */}
-        <div className="text-center">
+        <div className="text-center mt-12 space-y-4">
+          <div className="flex justify-center gap-6 text-sm text-gray-500">
+            <a href="/privacy-policy.html" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
+            <a href="/terms-of-service.html" className="hover:text-blue-600 transition-colors">Terms of Service</a>
+            <a
+              href="https://github.com/jyoti369/meeting-fatigue-calculator"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-blue-600 transition-colors"
+            >
+              GitHub
+            </a>
+          </div>
           <button onClick={() => navigate('/')} className="btn-secondary">
             ← Analyze Another Calendar
           </button>

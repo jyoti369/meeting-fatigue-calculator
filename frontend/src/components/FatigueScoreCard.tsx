@@ -5,19 +5,20 @@ interface FatigueScoreCardProps {
   stats: MeetingStats;
 }
 
-const gradeColors = {
-  A: 'from-green-500 to-green-600',
-  B: 'from-blue-500 to-blue-600',
-  C: 'from-yellow-500 to-yellow-600',
-  D: 'from-orange-500 to-orange-600',
-  F: 'from-red-500 to-red-600',
+const gradeSolidColors = {
+  A: 'text-green-600',
+  B: 'text-blue-600',
+  C: 'text-yellow-600',
+  D: 'text-orange-600',
+  F: 'text-red-600',
 };
 
 function FatigueScoreCard({ fatigueScore, stats }: FatigueScoreCardProps) {
   const avgWeeklyHours = ((stats.totalHours / 30) * 7).toFixed(1);
+  const colorClass = gradeSolidColors[fatigueScore.grade];
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-auto border-4 border-gray-200">
+    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-auto border-4 border-gray-200" id="report-card">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold mb-2">Meeting Fatigue Report Card</h2>
         <p className="text-gray-600">Last 30 Days Analysis</p>
@@ -39,21 +40,16 @@ function FatigueScoreCard({ fatigueScore, stats }: FatigueScoreCardProps) {
               cx="96"
               cy="96"
               r="88"
-              stroke="url(#gradient)"
+              stroke="currentColor"
               strokeWidth="12"
               fill="none"
               strokeDasharray={`${(fatigueScore.score / 100) * 553} 553`}
               strokeLinecap="round"
+              className={colorClass}
             />
-            <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" className={`${gradeColors[fatigueScore.grade]}`} stopColor="#3b82f6" />
-                <stop offset="100%" className={`${gradeColors[fatigueScore.grade]}`} stopColor="#8b5cf6" />
-              </linearGradient>
-            </defs>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className={`text-6xl font-bold bg-gradient-to-r ${gradeColors[fatigueScore.grade]} bg-clip-text text-transparent`}>
+            <div className={`text-6xl font-bold ${colorClass}`}>
               {fatigueScore.score}
             </div>
             <div className="text-2xl font-semibold text-gray-700">{fatigueScore.grade}</div>
