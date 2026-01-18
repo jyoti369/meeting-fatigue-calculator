@@ -36,6 +36,6 @@ export const config: EnvConfig = {
   gemini: {
     apiKey: getEnvVar('GEMINI_API_KEY'),
   },
-  frontendUrl: getEnvVar('FRONTEND_URL', 'http://localhost:5173'),
+  frontendUrl: getEnvVar('FRONTEND_URL', 'http://localhost:5173').replace(/\/$/, ''),
   sessionSecret: getEnvVar('SESSION_SECRET', 'dev-secret-change-in-production'),
 };
