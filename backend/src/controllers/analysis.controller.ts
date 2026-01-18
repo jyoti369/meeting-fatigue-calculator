@@ -68,7 +68,7 @@ export const analyzeCalendar = async (req: Request, res: Response) => {
     // Analyze and calculate fatigue score
     const analysis = analyticsService.analyze(events, categoryMap, userInfo.email || '');
 
-    res.json({
+    return res.json({
       success: true,
       message: `Analyzed ${events.length} meetings from the last ${days} days`,
       data: {
@@ -81,7 +81,7 @@ export const analyzeCalendar = async (req: Request, res: Response) => {
     } as ApiResponse<AnalysisResult & { userInfo: typeof userInfo }>);
   } catch (error: any) {
     console.error('Analysis error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to analyze calendar',
     } as ApiResponse<null>);

@@ -62,7 +62,7 @@ export class CalendarService {
         .map((event) => ({
           id: event.id || '',
           summary: event.summary || 'No Title',
-          description: event.description,
+          description: event.description || undefined,
           start: event.start!.dateTime!,
           end: event.end!.dateTime!,
           attendees: event.attendees?.map((a) => ({ email: a.email || '' })),

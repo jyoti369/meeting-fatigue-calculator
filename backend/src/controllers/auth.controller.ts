@@ -6,7 +6,7 @@ const calendarService = new CalendarService();
 
 export const initiateGoogleAuth = (req: Request, res: Response) => {
   const authUrl = calendarService.getAuthUrl();
-  res.json({ authUrl });
+  return res.json({ authUrl });
 };
 
 export const handleGoogleCallback = async (req: Request, res: Response) => {
@@ -23,9 +23,9 @@ export const handleGoogleCallback = async (req: Request, res: Response) => {
     // For MVP, we'll pass the access token to the frontend via redirect
     const accessToken = tokens.access_token;
 
-    res.redirect(`${config.frontendUrl}/dashboard?token=${accessToken}`);
+    return res.redirect(`${config.frontendUrl}/dashboard?token=${accessToken}`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    res.redirect(`${config.frontendUrl}/error?message=Authentication failed`);
+    return res.redirect(`${config.frontendUrl}/error?message=Authentication failed`);
   }
 };
