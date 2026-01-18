@@ -8,9 +8,9 @@ export class AIService {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    // Use gemini-pro for stable API access
+    // Use gemini-2.5-flash-lite for stable API access
     this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-pro'
+      model: 'gemini-2.5-flash-lite'
     });
   }
 
