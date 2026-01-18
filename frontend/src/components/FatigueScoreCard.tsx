@@ -59,7 +59,7 @@ function FatigueScoreCard({ fatigueScore, stats }: FatigueScoreCardProps) {
 
       {/* Badge */}
       <div className="text-center mb-6">
-        <div className="inline-block bg-gradient-to-r from-blue-50 to-purple-50 rounded-full px-6 py-3 border-2 border-blue-200">
+        <div className="inline-block bg-blue-50 rounded-full px-6 py-3 border-2 border-blue-200">
           <p className="text-lg font-semibold text-gray-800">{fatigueScore.badge}</p>
         </div>
       </div>
