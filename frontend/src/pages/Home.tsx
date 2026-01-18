@@ -128,7 +128,11 @@ function Home() {
           </div>
 
           {/* Footer */}
-          <div className="mt-16 text-gray-500 text-sm">
+          <div className="mt-16 text-gray-500 text-sm space-y-4">
+            <div className="flex justify-center gap-6">
+              <a href="/privacy-policy.html" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
+              <a href="/terms-of-service.html" className="hover:text-blue-600 transition-colors">Terms of Service</a>
+            </div>
             <p>
               Built by{' '}
               <a
