@@ -8,10 +8,9 @@ export class AIService {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    // Use gemini-1.5-flash for better stability and higher rate limits
+    // Use gemini-pro for stable API access
     this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: { responseMimeType: "application/json" }
+      model: 'gemini-pro'
     });
   }
 
