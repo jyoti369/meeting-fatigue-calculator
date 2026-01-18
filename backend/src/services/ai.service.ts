@@ -8,49 +8,96 @@ export class AIService {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    // Use gemini-1.5-flash for better stability and higher rate limits
+    this.model = this.genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: "application/json" }
+    });
   }
 
-  async categorizeMeeting(event: CalendarEvent): Promise<string> {
-    const categories = Object.keys(MEETING_CATEGORIES).join(', ');
+  async batchCategorizeMeetings(events: CalendarEvent[]): Promise<Map<string, string>> {
+    const results = new Map<string, string>();
 
-    const prompt = `You are a meeting categorization expert. Categorize this meeting into ONE of these categories: ${categories}.
+    // If no events, return empty map
+    if (events.length === 0) return results;
 
-Meeting Title: ${event.summary}
-Description: ${event.description || 'N/A'}
-Number of Attendees: ${event.attendees?.length || 1}
+    // Filter out events that we can easily categorize with patterns first to save AI quota
+    const needsAI: CalendarEvent[] = [];
+    for (const event of events) {
+      const fallback = this.getFastPatternMatch(event);
+      if (fallback) {
+        results.set(event.id, fallback);
+      } else {
+        needsAI.push(event);
+      }
+    }
 
-Return ONLY the category name (lowercase, using underscores). Examples: "standup", "one_on_one", "planning", "review", "brainstorm", "training", "interview", "all_hands", "social", "other"
+    if (needsAI.length === 0) return results;
+
+    // Process in larger batches (e.g., 25 at a time) but consolidated into ONE prompt
+    const batchSize = 25;
+    const categoriesList = Object.keys(MEETING_CATEGORIES).join(', ');
+
+    for (let i = 0; i < needsAI.length; i += batchSize) {
+      const batch = needsAI.slice(i, i + batchSize);
+      const meetingList = batch.map(e => ({ id: e.id, title: e.summary, desc: e.description?.substring(0, 100) }));
+
+      const prompt = `You are a meeting categorization expert. 
+Categorize the following meetings into ONE of these categories: ${categoriesList}.
+
+Meetings:
+${JSON.stringify(meetingList, null, 2)}
+
+Return a JSON object where keys are meeting IDs and values are the category names.
+Example format: {"event_id_1": "standup", "event_id_2": "planning"}
 
 Rules:
 - "standup" = daily sync, daily standup, scrum, status update
-- "one_on_one" = 1:1, check-in, catch up with 1-2 people, manager sync
-- "planning" = sprint planning, roadmap, strategy, OKRs, quarterly planning
+- "one_on_one" = 1:1, check-in, catch up, manager sync
+- "planning" = sprint planning, roadmap, strategy, OKRs
 - "review" = demo, sprint review, showcase, retrospective
-- "brainstorm" = brainstorming, ideation, creative session, whiteboard
-- "training" = workshop, learning, onboarding, training session
-- "interview" = candidate interview, screening, hiring
-- "all_hands" = company meeting, town hall, all hands
+- "brainstorm" = brainstorming, ideation, creative session
+- "training" = workshop, learning, onboarding
+- "interview" = candidate interview, screening
+- "all_hands" = company meeting, town hall
 - "social" = coffee chat, team building, happy hour, lunch
-- "other" = everything else
+- "other" = everything else`;
 
-Category:`;
+      try {
+        const result = await this.model.generateContent(prompt);
+        const responseText = result.response.text();
+        const categories = JSON.parse(responseText);
 
-    try {
-      const result = await this.model.generateContent(prompt);
-      const category = result.response.text().trim().toLowerCase();
-
-      // Validate category
-      if (MEETING_CATEGORIES[category]) {
-        return category;
+        for (const event of batch) {
+          const category = categories[event.id] || 'other';
+          results.set(event.id, MEETING_CATEGORIES[category] ? category : 'other');
+        }
+      } catch (error) {
+        console.error('Batch AI categorization failed, falling back to patterns:', error);
+        // Fallback for this batch
+        for (const event of batch) {
+          results.set(event.id, this.fallbackCategorization(event));
+        }
       }
 
-      // Fallback to simple pattern matching
-      return this.fallbackCategorization(event);
-    } catch (error) {
-      console.error('AI categorization failed:', error);
-      return this.fallbackCategorization(event);
+      // Small delay between API calls just in case
+      if (i + batchSize < needsAI.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
+
+    return results;
+  }
+
+  private getFastPatternMatch(event: CalendarEvent): string | null {
+    const title = (event.summary || '').toLowerCase();
+
+    if (/(standup|scrum|daily sync)/i.test(title)) return 'standup';
+    if (/(1:1|one on one|1-1)/i.test(title)) return 'one_on_one';
+    if (/(sprint planning|okr planning)/i.test(title)) return 'planning';
+    if (/(interview|screening)/i.test(title)) return 'interview';
+
+    return null;
   }
 
   private fallbackCategorization(event: CalendarEvent): string {
@@ -58,7 +105,6 @@ Category:`;
     const description = (event.description || '').toLowerCase();
     const combined = `${title} ${description}`;
 
-    // Pattern matching
     if (/(standup|daily|scrum|sync)/i.test(combined)) return 'standup';
     if (/(1:1|one on one|1-1|check.?in)/i.test(combined)) return 'one_on_one';
     if (/(planning|sprint|roadmap|strategy)/i.test(combined)) return 'planning';
@@ -70,28 +116,5 @@ Category:`;
     if (/(coffee|social|lunch|happy.?hour|team.?building)/i.test(combined)) return 'social';
 
     return 'other';
-  }
-
-  async batchCategorizeMeetings(events: CalendarEvent[]): Promise<Map<string, string>> {
-    const categories = new Map<string, string>();
-
-    // Process in batches to avoid rate limits
-    const batchSize = 10;
-    for (let i = 0; i < events.length; i += batchSize) {
-      const batch = events.slice(i, i + batchSize);
-      const promises = batch.map(async (event) => {
-        const category = await this.categorizeMeeting(event);
-        categories.set(event.id, category);
-      });
-
-      await Promise.all(promises);
-
-      // Small delay between batches
-      if (i + batchSize < events.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-
-    return categories;
   }
 }
